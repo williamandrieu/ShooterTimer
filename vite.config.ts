@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => ({
+  base: process.env.VITE_BASE_PATH ?? '/',
   plugins: [
     react(),
     ...(mode === 'https' ? [basicSsl()] : []),
@@ -18,10 +19,10 @@ export default defineConfig(({ mode }) => ({
         background_color: '#0b0d10',
         theme_color: '#0b0d10',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: './',
         icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       workbox: {

@@ -11,7 +11,7 @@ export default function App() {
   return (
     <ErrorBoundary logger={deps.logger} fallback={<CrashPage />}>
       <AppProviders deps={deps}>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <AppRoutes />
         </BrowserRouter>
       </AppProviders>
