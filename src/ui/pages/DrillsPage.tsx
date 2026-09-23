@@ -1,4 +1,4 @@
-import { DRILLS } from '../../domain/drills/catalog.ts';
+import { DRILLS, offersDryPar } from '../../domain/drills/catalog.ts';
 import { liveFireHref } from '../../domain/settings/settings.ts';
 import { useI18n, useSettings } from '../../app/AppProviders.tsx';
 import type { TranslationKey } from '../../i18n/index.ts';
@@ -23,7 +23,7 @@ export function DrillsPage() {
                   {t('input.dryTap')}
                 </Button>
               ) : null}
-              {drill.recommendedInput.includes('dryPar') ? (
+              {offersDryPar(drill) ? (
                 <Button
                   variant="secondary"
                   to={`/run?drillId=${drill.id}&input=dryPar`}

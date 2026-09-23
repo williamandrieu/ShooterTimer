@@ -50,6 +50,9 @@ describe('pages', () => {
       '/preflight?drillId=bill-drill-6&input=live',
     );
     expect(screen.getByTestId('drill-custom-par-dryPar')).toBeInTheDocument();
+    expect(screen.queryByTestId('drill-draw-dryPar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('drill-bill-drill-6-dryPar')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('drill-el-presidente-dryPar')).not.toBeInTheDocument();
   });
 
   it('changes language and delay range', async () => {

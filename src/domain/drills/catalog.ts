@@ -16,7 +16,7 @@ export const DRILLS: readonly Drill[] = [
     category: 'ipsc',
     timerProfile: 'ipscRandomStart',
     expectedShots: 1,
-    recommendedInput: ['live', 'dryTap', 'dryPar'],
+    recommendedInput: ['live', 'dryTap'],
     titleKey: 'drill.draw.title',
     briefKey: 'drill.draw.brief',
   },
@@ -150,6 +150,13 @@ export const DRILLS: readonly Drill[] = [
     briefKey: 'drill.rfp4.brief',
   },
 ];
+
+export function offersDryPar(drill: Drill): boolean {
+  return (
+    drill.recommendedInput.includes('dryPar') &&
+    (drill.parSeconds !== undefined || drill.exposures !== undefined)
+  );
+}
 
 export function getDrill(id: string): Drill | undefined {
   return DRILLS.find((drill) => drill.id === id);
