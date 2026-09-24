@@ -1,5 +1,6 @@
 import { useI18n, useSettings } from '../../app/AppProviders.tsx';
 import { Field } from './Field.tsx';
+import { sliderFillStyle } from './sliderStyle.ts';
 import styles from '../styles/ui.module.css';
 
 export function MicSensitivityField({
@@ -33,7 +34,7 @@ export function MicSensitivityField({
         step={0.01}
         data-testid={inputTestId}
         value={settings.micSensitivity}
-        style={{ '--slider-fill': `${percent}%` }}
+        style={sliderFillStyle(percent)}
         onChange={(event) => void save({ ...settings, micSensitivity: Number(event.target.value) })}
       />
       <p className={styles.muted}>{t('settings.sensitivityHint')}</p>

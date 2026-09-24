@@ -2,6 +2,7 @@ import { LOCALES, type Locale } from '../../domain/settings/settings.ts';
 import { useI18n, useSettings } from '../../app/AppProviders.tsx';
 import type { TranslationKey } from '../../i18n/index.ts';
 import { MicSensitivityField } from '../components/MicSensitivityField.tsx';
+import { sliderFillStyle } from '../components/sliderStyle.ts';
 import { Field } from '../components/Field.tsx';
 import { Page } from '../components/Page.tsx';
 import styles from '../styles/ui.module.css';
@@ -30,7 +31,7 @@ export function SettingsPage() {
         <input
           className={styles.slider}
           type="range"
-          style={{ '--slider-fill': `${Math.round(settings.beepVolume * 100)}%` }}
+          style={sliderFillStyle(settings.beepVolume * 100)}
           min={0}
           max={1}
           step={0.05}
