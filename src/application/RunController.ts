@@ -74,11 +74,14 @@ export class RunController {
     if (!allowed.ok) {
       return allowed;
     }
-    if (this.disposed || this.starting) {
-      return ok(undefined);
+    if (this.disposed) {
+      return err(appError(AppErrorCode.START_DISPOSED, 'disposed'));
+    }
+    if (this.starting) {
+      return err(appError(AppErrorCode.START_SKIPPED, 'busy'));
     }
     if (this.state.phase !== 'idle' && this.state.phase !== 'review') {
-      return ok(undefined);
+      return err(appError(AppErrorCode.START_SKIPPED, 'phase'));
     }
     this.starting = true;
     try {
@@ -90,7 +93,7 @@ export class RunController {
       }
       if (this.disposed) {
         this.options.shotInput.stop();
-        return ok(undefined);
+        return err(appError(AppErrorCode.START_DISPOSED, 'disposed'));
       }
       try {
         await this.options.effects.acquireWakeLock();

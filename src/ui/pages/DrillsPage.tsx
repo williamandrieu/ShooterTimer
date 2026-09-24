@@ -5,13 +5,19 @@ import type { TranslationKey } from '../../i18n/index.ts';
 import { Button } from '../components/Button.tsx';
 import { Page } from '../components/Page.tsx';
 import styles from '../styles/ui.module.css';
+import { useSearchParams } from 'react-router-dom';
 
 export function DrillsPage() {
   const { t } = useI18n();
   const { settings } = useSettings();
+  const [params] = useSearchParams();
+  const requested = params.get('category');
+  const categories = (['ipsc', 'issf'] as const).filter(
+    (category) => requested !== 'ipsc' && requested !== 'issf' || category === requested,
+  );
   return (
     <Page title={t('nav.drills')}>
-      {(['ipsc', 'issf'] as const).map((category) => (
+      {categories.map((category) => (
         <section key={category} className={styles.stack}>
           <h2 className={styles.sectionTitle}>{t(`category.${category}` as TranslationKey)}</h2>
           {DRILLS.filter((drill) => drill.category === category).map((drill) => (

@@ -9,7 +9,12 @@ import type { Session, ShotEvent } from '../domain/session/session.ts';
 import { shotIndex, splitSec, timeSec } from '../domain/value-objects/ids.ts';
 
 export const InputMethodSchema = z.enum(['live', 'dryPar', 'dryTap', 'dryParTap']);
-export const TimerProfileSchema = z.enum(['ipscRandomStart', 'issfParCountdown', 'issfExposureSequence']);
+export const TimerProfileSchema = z.enum([
+  'ipscRandomStart',
+  'issfParCountdown',
+  'issfExposureSequence',
+  'issfCombined',
+]);
 export const LocaleSchema = z.enum(LOCALES as unknown as [Locale, ...Locale[]]);
 export const MicPresetSchema = z.enum(MIC_PRESETS as unknown as [MicPreset, ...MicPreset[]]);
 
@@ -27,6 +32,13 @@ export const DrillDefinitionSchema = z.object({
     })
     .optional(),
   prepSeconds: z.number().nonnegative().optional(),
+  thenExposures: z
+    .object({
+      count: z.number().int().positive(),
+      windowSec: z.number().positive(),
+      pauseSec: z.number().nonnegative(),
+    })
+    .optional(),
   recommendedInput: z.array(z.enum(['live', 'dryPar', 'dryTap'])).min(1),
   titleKey: z.string().min(1),
   briefKey: z.string().min(1),
@@ -47,9 +59,9 @@ export const SettingsSchema = z.object({
   vibrationEnabled: z.boolean(),
   micPreset: MicPresetSchema,
   micSensitivity: z.number().min(0).max(1),
-  prepEnabled: z.boolean(),
   reducedMotion: z.boolean(),
   micGranted: z.boolean().optional(),
+  voiceEnabled: z.boolean().optional(),
 });
 
 export const ShotEventRecordSchema = z.object({
@@ -74,7 +86,6 @@ export const SessionRecordSchema = z.object({
     sensitivity: z.number(),
     preset: MicPresetSchema,
   }),
-  shooterName: z.string().optional(),
 });
 
 export type SessionRecord = z.infer<typeof SessionRecordSchema>;
@@ -136,7 +147,6 @@ export function sessionToRecord(session: Session): SessionRecord {
     firstShotSec: session.firstShotSec,
     totalSec: session.totalSec,
     settingsSnapshot: session.settingsSnapshot,
-    shooterName: session.shooterName,
   };
 }
 
@@ -151,7 +161,6 @@ export function sessionFromRecord(record: SessionRecord): Session {
     firstShotSec: record.firstShotSec === null ? null : timeSec(record.firstShotSec),
     totalSec: record.totalSec === null ? null : timeSec(record.totalSec),
     settingsSnapshot: record.settingsSnapshot,
-    shooterName: record.shooterName,
   };
 }
 

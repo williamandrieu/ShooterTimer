@@ -8,6 +8,7 @@ import type {
   SessionRepository,
   SettingsRepository,
   ShotInputPort,
+  SpeechPort,
   TargetSequencePort,
 } from '../ports/contracts.ts';
 import { requirePort } from '../ports/contracts.ts';
@@ -24,6 +25,7 @@ import type { MicPermissionState, Settings } from '../domain/settings/settings.t
 import { onsetConfigFor } from '../domain/audio/onset.ts';
 import { LiveShotInput } from '../infra/audio/audioService.ts';
 import { queryBrowserMicPermission } from '../infra/audio/micPermission.ts';
+import { createBrowserSpeech } from '../infra/browser/speech.ts';
 import workletUrl from '../infra/audio/shotDetector.worklet.ts?url';
 
 export type AppDeps = {
@@ -40,6 +42,7 @@ export type AppDeps = {
   createEffects: (onFlash: () => void) => BrowserRunEffects;
   requestMic: () => Promise<Result<void>>;
   queryMicPermission: () => Promise<MicPermissionState>;
+  speech: SpeechPort;
 };
 
 export function createAppDeps(overrides: Partial<AppDeps> = {}): AppDeps {
@@ -72,6 +75,7 @@ export function createAppDeps(overrides: Partial<AppDeps> = {}): AppDeps {
       return requestMicrophone(async () => result.value);
     },
     queryMicPermission: () => queryBrowserMicPermission(),
+    speech: createBrowserSpeech(),
     ...overrides,
   };
   return deps;

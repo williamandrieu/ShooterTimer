@@ -77,6 +77,12 @@ describe('timer reducer', () => {
   });
 
   it('runs exposure sequence and deletes shots', () => {
+    const immediate = reduceTimerState(
+      createIdleState({ ...rapid, prepSeconds: 0 }, 'dryTap'),
+      { type: 'ARM', at: timeSec(0), delaySec: timeSec(0) },
+    );
+    expect(immediate.phase).toBe('armed');
+    expect(immediate.light).toBe('red');
     let state = createIdleState(rapid, 'dryTap');
     state = reduceTimerState(state, { type: 'ARM', at: timeSec(0), delaySec: timeSec(0) });
     state = reduceTimerState(state, { type: 'START_BEEP', at: timeSec(0) });

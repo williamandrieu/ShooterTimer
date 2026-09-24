@@ -31,7 +31,9 @@ function applyTick(state: TimerState, at: TimeSec): TimerState {
       remainingParSec: remainingPar,
       remainingWindowSec: remainingWindow,
       remainingPauseSec: remainingPause,
-      light: state.profile === 'issfExposureSequence' ? (state.exposureOpen ? 'green' : 'red') : 'off',
+      light: state.profile === 'issfExposureSequence' || state.combinedStage === 'rapid'
+        ? (state.exposureOpen ? 'green' : 'red')
+        : 'off',
     };
   }
   return state;
@@ -146,6 +148,22 @@ export function reduceTimerState(state: TimerState, event: TimerEvent): TimerSta
     case 'PAR_END':
       if (state.phase !== 'running') {
         return state;
+      }
+      if (state.thenExposures && state.combinedStage === 'precision') {
+        return {
+          ...state,
+          combinedStage: 'rapid',
+          profile: 'issfExposureSequence',
+          exposures: state.thenExposures,
+          parSeconds: null,
+          remainingParSec: null,
+          phase: 'running',
+          light: 'red',
+          exposureOpen: false,
+          currentExposureIndex: null,
+          remainingWindowSec: timeSec(state.thenExposures.windowSec),
+          remainingPauseSec: timeSec(state.thenExposures.pauseSec),
+        };
       }
       return toReview(state, event.at);
     case 'EXPOSURE_OPEN':

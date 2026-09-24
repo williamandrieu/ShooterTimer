@@ -11,7 +11,6 @@ export function timerStateToSession(
   ids: IdPort,
   createdAt: number,
   settings: Settings,
-  shooterName?: string,
 ): Session {
   return {
     id: ids.next(),
@@ -23,7 +22,6 @@ export function timerStateToSession(
     firstShotSec: firstShotTime(state.shots),
     totalSec: lastShotTime(state.shots) ?? state.elapsedSec,
     settingsSnapshot: { sensitivity: settings.micSensitivity, preset: settings.micPreset },
-    shooterName,
   };
 }
 

@@ -32,7 +32,6 @@ describe('validation schemas', () => {
       vibrationEnabled: false,
       micPreset: 'indoor',
       micSensitivity: 0.4,
-      prepEnabled: true,
       reducedMotion: true,
     });
     expect(parsed.ipscDelayMaxSec).toBe(3);
@@ -47,7 +46,6 @@ describe('validation schemas', () => {
       vibrationEnabled: true,
       micPreset: 'handgun',
       micSensitivity: 0.55,
-      prepEnabled: false,
       reducedMotion: false,
       micGranted: true,
     });
@@ -61,7 +59,6 @@ describe('validation schemas', () => {
       vibrationEnabled: true,
       micPreset: 'handgun',
       micSensitivity: 0.55,
-      prepEnabled: false,
       reducedMotion: false,
     });
     expect(ordered.ipscDelayMaxSec).toBe(4);
@@ -82,15 +79,13 @@ describe('validation schemas', () => {
       firstShotSec: timeSec(1),
       totalSec: timeSec(1.3),
       settingsSnapshot: { sensitivity: 0.5, preset: 'handgun' },
-      shooterName: 'Alex',
     };
     const record = sessionToRecord(session);
     const roundtrip = sessionFromRecord(record);
-    expect(roundtrip.shooterName).toBe('Alex');
     expect(roundtrip.shots[1]?.exposureIndex).toBe(0);
     expect(parseSessionRecord(record).ok).toBe(true);
     expect(parseSessionRecord({}).ok).toBe(false);
-    const nullTimes = sessionFromRecord({ ...record, firstShotSec: null, totalSec: null, shooterName: undefined });
+    const nullTimes = sessionFromRecord({ ...record, firstShotSec: null, totalSec: null });
     expect(nullTimes.firstShotSec).toBeNull();
     expect(parseDrillDefinition(getDrill('draw')).ok).toBe(true);
     expect(parseDrillDefinition({}).ok).toBe(false);

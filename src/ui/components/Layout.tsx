@@ -11,17 +11,6 @@ function IconHome() {
   );
 }
 
-function IconDrills() {
-  return (
-    <svg className={styles.navIcon} viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2.4a7.6 7.6 0 1 1-7.6 7.6A7.6 7.6 0 0 1 12 4.4zm-.9 3.2h1.8v4.05l3.2 1.9-.9 1.5L11.1 13z"
-      />
-    </svg>
-  );
-}
-
 function IconHistory() {
   return (
     <svg className={styles.navIcon} viewBox="0 0 24 24" aria-hidden="true">
@@ -69,10 +58,6 @@ export function Layout() {
         <NavLink to="/" end>
           <IconHome />
           <span>{t('nav.home')}</span>
-        </NavLink>
-        <NavLink to="/drills">
-          <IconDrills />
-          <span>{t('nav.drills')}</span>
         </NavLink>
         <NavLink to="/history">
           <IconHistory />

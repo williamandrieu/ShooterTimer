@@ -1,16 +1,48 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { RunController } from '../application/RunController.ts';
 import { getDrill } from '../domain/drills/catalog.ts';
+import { AppErrorCode } from '../domain/errors.ts';
+import type { Result } from '../domain/result.ts';
 import type { InputMethod, RunConfig } from '../domain/drills/types.ts';
 import type { Settings } from '../domain/settings/settings.ts';
 import { createIdleState, type TimerState } from '../domain/timer/state.ts';
 import type { ShotIndex } from '../domain/value-objects/ids.ts';
 import type { AppDeps } from '../app/createAppDeps.ts';
 import { errorMessageKey } from './errorMessage.ts';
+import { pickMessages, t } from '../i18n/index.ts';
 import type { TranslationKey } from '../i18n/index.ts';
+import type { SpeechPort } from '../ports/contracts.ts';
 
 export function resolveRunDrill(config: RunConfig) {
   return getDrill(config.drillId);
+}
+
+export function announceTransition(
+  speech: SpeechPort,
+  settings: Settings,
+  category: string | undefined,
+  previous: TimerState,
+  next: TimerState,
+): void {
+  if (!settings.voiceEnabled || category !== 'issf') {
+    return;
+  }
+  const say = (key: TranslationKey, vars?: Record<string, string>) => {
+    speech.speak(t(pickMessages(settings.locale), key, vars), settings.locale);
+  };
+  if (next.phase === 'prep' && previous.phase !== 'prep') {
+    say('voice.prep');
+  }
+  if (next.phase === 'running' && (previous.phase === 'armed' || previous.phase === 'prep')) {
+    say('voice.attention');
+  }
+  if (
+    next.exposureOpen &&
+    next.currentExposureIndex !== null &&
+    next.currentExposureIndex !== previous.currentExposureIndex
+  ) {
+    say('voice.series', { n: String(next.currentExposureIndex + 1) });
+  }
 }
 
 export function useTimerRun(
@@ -39,11 +71,20 @@ export function useTimerRun(
   );
   const [error, setError] = useState<TranslationKey | null>(null);
   const [starting, setStarting] = useState(false);
+  const [ready, setReady] = useState(false);
   const controllerRef = useRef<RunController | null>(null);
   const startingRef = useRef(false);
+  const pendingStartRef = useRef(false);
+  const generationRef = useRef(0);
+  const mountedRef = useRef(true);
   const flashRef = useRef(onFlash);
   const finishRef = useRef(onFinish);
   const settingsRef = useRef(settings);
+  const beginStartRef = useRef(beginStart);
+
+  useLayoutEffect(() => {
+    beginStartRef.current = beginStart;
+  });
 
   useEffect(() => {
     flashRef.current = onFlash;
@@ -51,10 +92,14 @@ export function useTimerRun(
     settingsRef.current = settings;
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    mountedRef.current = true;
     if (!drill) {
-      return undefined;
+      return () => {
+        mountedRef.current = false;
+      };
     }
+    generationRef.current += 1;
     const inputMethod: InputMethod = config.inputMethod;
     const shotInput = deps.createShotInput(inputMethod, settingsRef.current);
     const controller = new RunController({
@@ -71,7 +116,11 @@ export function useTimerRun(
       targets: deps.targets,
     });
     controllerRef.current = controller;
+    const previous = { current: controller.getState() };
     const unsub = controller.subscribe((next) => {
+      setReady(true);
+      announceTransition(deps.speech, settingsRef.current, drill.category, previous.current, next);
+      previous.current = next;
       setState(next);
       if (next.phase === 'review') {
         finishRef.current(next);
@@ -81,13 +130,67 @@ export function useTimerRun(
       controller.handleVisibility(document.hidden);
     };
     document.addEventListener('visibilitychange', onVisibility);
+    if (pendingStartRef.current) {
+      pendingStartRef.current = false;
+      void beginStartRef.current();
+    }
     return () => {
+      mountedRef.current = false;
+      generationRef.current += 1;
       document.removeEventListener('visibilitychange', onVisibility);
       unsub();
       controller.dispose();
       controllerRef.current = null;
+      setReady(false);
     };
   }, [config.drillId, config.inputMethod, config.parSecondsOverride, deps, drill]);
+
+  async function drive(controller: RunController, allowRetry: boolean): Promise<void> {
+    const gen = generationRef.current;
+    const result = await controller.start();
+    if (!mountedRef.current) {
+      return;
+    }
+    const next = controllerRef.current;
+    const disposed = !result.ok && result.error.code === AppErrorCode.START_DISPOSED;
+    const stale = generationRef.current !== gen || disposed;
+    if (allowRetry && stale && next) {
+      await drive(next, false);
+      return;
+    }
+    applyStartResult(result, disposed);
+  }
+
+  function applyStartResult(result: Result<void>, disposed: boolean): void {
+    if (result.ok || result.error.code === AppErrorCode.START_SKIPPED) {
+      return;
+    }
+    if (disposed) {
+      deps.logger.warn('start disposed');
+    }
+    setError(errorMessageKey(result.error.code));
+  }
+
+  async function beginStart(): Promise<void> {
+    deps.audio.unlock();
+    const controller = controllerRef.current;
+    if (!controller) {
+      pendingStartRef.current = true;
+      return;
+    }
+    if (startingRef.current) {
+      return;
+    }
+    startingRef.current = true;
+    setStarting(true);
+    setError(null);
+    try {
+      await drive(controller, true);
+    } finally {
+      startingRef.current = false;
+      setStarting(false);
+    }
+  }
 
   useEffect(() => {
     controllerRef.current?.applySettings(settings);
@@ -97,26 +200,9 @@ export function useTimerRun(
     state,
     error,
     starting,
+    ready,
     missingDrill: !drill,
-    start: async () => {
-      deps.audio.unlock();
-      const controller = controllerRef.current;
-      if (!controller || startingRef.current) {
-        return;
-      }
-      startingRef.current = true;
-      setStarting(true);
-      setError(null);
-      try {
-        const result = await controller.start();
-        if (result && !result.ok) {
-          setError(errorMessageKey(result.error.code));
-        }
-      } finally {
-        startingRef.current = false;
-        setStarting(false);
-      }
-    },
+    start: beginStart,
     stop: () => {
       controllerRef.current?.stop();
     },

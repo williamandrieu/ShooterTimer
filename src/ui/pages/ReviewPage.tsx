@@ -70,9 +70,6 @@ export function ReviewPage() {
       >
         {t('review.save')}
       </Button>
-      <Button variant="secondary" to={continueRunHref(lastRun.drillId, lastRun.inputMethod)}>
-        {t('review.repeat')}
-      </Button>
       <Button variant="secondary" to={continueRunHref(lastRun.drillId, lastRun.inputMethod)} data-testid="back-to-drill">
         {t('review.back')}
       </Button>

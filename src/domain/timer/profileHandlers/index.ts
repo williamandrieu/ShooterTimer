@@ -114,8 +114,24 @@ export const issfExposureSequenceHandler: TimerProfileHandler = {
     if (!spec) {
       return [];
     }
+    if (lastEvent.type === 'ARM' && state.phase === 'prep') {
+      return [
+        {
+          delayMs: Math.round(state.prepRemainingSec * 1000),
+          event: { type: 'START_BEEP', at: timeSec(now + state.prepRemainingSec) },
+        },
+      ];
+    }
     if (lastEvent.type === 'ARM') {
       return [{ delayMs: 0, event: { type: 'START_BEEP', at: now } }];
+    }
+    if (lastEvent.type === 'VISIBILITY_VISIBLE' && state.phase === 'prep' && state.prepRemainingSec > 0) {
+      return [
+        {
+          delayMs: Math.round(state.prepRemainingSec * 1000),
+          event: { type: 'START_BEEP', at: timeSec(now + state.prepRemainingSec) },
+        },
+      ];
     }
     if (lastEvent.type === 'START_BEEP') {
       return [{ delayMs: 0, event: { type: 'EXPOSURE_OPEN', at: now, exposureIndex: 0 } }];
@@ -175,6 +191,19 @@ export const issfExposureSequenceHandler: TimerProfileHandler = {
   },
 };
 
+export const issfCombinedHandler: TimerProfileHandler = {
+  id: 'issfCombined',
+  schedulesAfter(state, lastEvent, now) {
+    if (lastEvent.type === 'PAR_END' && state.combinedStage === 'rapid') {
+      return [{ delayMs: 0, event: { type: 'EXPOSURE_OPEN', at: now, exposureIndex: 0 } }];
+    }
+    if (state.combinedStage === 'rapid') {
+      return issfExposureSequenceHandler.schedulesAfter(state, lastEvent, now);
+    }
+    return issfParCountdownHandler.schedulesAfter(state, lastEvent, now);
+  },
+};
+
 export class ProfileHandlerRegistry {
   private readonly map = new Map<TimerProfileId, TimerProfileHandler>();
 
@@ -182,6 +211,7 @@ export class ProfileHandlerRegistry {
     ipscRandomStartHandler,
     issfParCountdownHandler,
     issfExposureSequenceHandler,
+    issfCombinedHandler,
   ]) {
     for (const handler of initial) {
       this.map.set(handler.id, handler);

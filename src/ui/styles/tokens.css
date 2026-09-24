@@ -12,6 +12,10 @@
   --border: #2a313b;
   --nav: #11151b;
   --input: #111;
+  --flash: #fff;
+  --slider-track: var(--border);
+  --slider-h: 12px;
+  --slider-h-lg: 18px;
   --font: ui-sans-serif, system-ui, sans-serif;
   --text: 20px;
   --text-sm: 16px;
@@ -96,7 +100,7 @@ select {
   pointer-events: none;
   opacity: 0;
   background:
-    radial-gradient(circle at 50% 42%, #fff 0%, #fff 48%, #ffe566 100%);
+    radial-gradient(circle at 50% 42%, var(--flash) 0%, var(--flash) 48%, var(--accent) 100%);
 }
 
 .flash.on {

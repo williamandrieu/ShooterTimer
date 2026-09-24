@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useSettingsLoader } from './useSettingsLoader.ts';
-import { useTimerRun } from './useTimerRun.ts';
+import { useTimerRun, announceTransition } from './useTimerRun.ts';
 import { errorMessageKey } from './errorMessage.ts';
 import { timerStateToSession } from './saveRun.ts';
 import { MemorySettings } from '../test/fakes.ts';
@@ -9,6 +9,8 @@ import { createTestDeps } from '../test/createTestDeps.ts';
 import { DEFAULT_SETTINGS } from '../domain/settings/settings.ts';
 import { AppErrorCode } from '../domain/errors.ts';
 import { drillId } from '../domain/value-objects/ids.ts';
+import { getDrill } from '../domain/drills/catalog.ts';
+import { createIdleState } from '../domain/timer/state.ts';
 
 describe('errorMessageKey', () => {
   it('maps known codes', () => {
@@ -201,5 +203,162 @@ describe('useTimerRun', () => {
     });
     expect(deps.shots.started).toBe(true);
     hook.unmount();
+  });
+
+  it('arms when start is requested before the controller exists', async () => {
+    const deps = createTestDeps();
+    const settings = { ...DEFAULT_SETTINGS, ipscDelayMinSec: 0, ipscDelayMaxSec: 0 };
+    let requested = false;
+    const hook = renderHook(() => {
+      const run = useTimerRun(
+        { drillId: drillId('free-timer'), inputMethod: 'dryTap' },
+        deps,
+        settings,
+        () => undefined,
+        () => undefined,
+      );
+      if (!requested) {
+        requested = true;
+        void run.start();
+      }
+      return run;
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(hook.result.current.ready).toBe(true);
+    expect(hook.result.current.state.phase).not.toBe('idle');
+    hook.unmount();
+  });
+
+  it('retries on the replacement controller when start is disposed', async () => {
+    const deps = createTestDeps();
+    const settings = { ...DEFAULT_SETTINGS, ipscDelayMinSec: 0, ipscDelayMaxSec: 0 };
+    let release: () => void = () => undefined;
+    deps.shots.holdStart = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const hook = renderHook(
+      ({ id }) =>
+        useTimerRun(
+          { drillId: drillId(id), inputMethod: 'dryTap' },
+          deps,
+          settings,
+          () => undefined,
+          () => undefined,
+        ),
+      { initialProps: { id: 'free-timer' } },
+    );
+    let started: Promise<void> | undefined;
+    act(() => {
+      started = hook.result.current.start();
+    });
+    hook.rerender({ id: 'bill-drill-6' });
+    release();
+    await act(async () => {
+      await started;
+    });
+    expect(hook.result.current.error).toBeNull();
+    expect(hook.result.current.state.phase).not.toBe('idle');
+    hook.unmount();
+  });
+
+  it('reports a disposed start that has no replacement controller', async () => {
+    const deps = createTestDeps();
+    const settings = { ...DEFAULT_SETTINGS, ipscDelayMinSec: 0, ipscDelayMaxSec: 0 };
+    let release: () => void = () => undefined;
+    deps.shots.holdStart = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const hook = renderHook(
+      ({ id }) =>
+        useTimerRun(
+          { drillId: drillId(id), inputMethod: 'dryTap' },
+          deps,
+          settings,
+          () => undefined,
+          () => undefined,
+        ),
+      { initialProps: { id: 'free-timer' } },
+    );
+    let started: Promise<void> | undefined;
+    act(() => {
+      started = hook.result.current.start();
+    });
+    hook.rerender({ id: 'no-such' });
+    release();
+    await act(async () => {
+      await started;
+    });
+    expect(hook.result.current.error).toBe('error.generic');
+    expect(deps.logger.lines.some((line) => line.level === 'warn' && line.message === 'start disposed')).toBe(
+      true,
+    );
+    hook.unmount();
+  });
+
+  it('ignores a start that finishes after unmount', async () => {
+    const deps = createTestDeps();
+    let release: () => void = () => undefined;
+    deps.shots.holdStart = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const hook = renderHook(() =>
+      useTimerRun(
+        { drillId: drillId('free-timer'), inputMethod: 'dryTap' },
+        deps,
+        { ...DEFAULT_SETTINGS, ipscDelayMinSec: 0, ipscDelayMaxSec: 0 },
+        () => undefined,
+        () => undefined,
+      ),
+    );
+    act(() => {
+      void hook.result.current.start();
+    });
+    hook.unmount();
+    release();
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
+  it('does not surface an error when the run is already started', async () => {
+    const deps = createTestDeps();
+    const settings = { ...DEFAULT_SETTINGS, ipscDelayMinSec: 0, ipscDelayMaxSec: 0 };
+    const hook = renderHook(() =>
+      useTimerRun(
+        { drillId: drillId('free-timer'), inputMethod: 'dryTap' },
+        deps,
+        settings,
+        () => undefined,
+        () => undefined,
+      ),
+    );
+    await act(async () => {
+      await hook.result.current.start();
+    });
+    await act(async () => {
+      await hook.result.current.start();
+    });
+    expect(hook.result.current.error).toBeNull();
+    expect(hook.result.current.state.phase).not.toBe('idle');
+    hook.unmount();
+  });
+});
+
+describe('announceTransition', () => {
+  it('speaks ISSF prep, attention and series numbers', () => {
+    const spoken: string[] = [];
+    const speech = { speak: (text: string) => spoken.push(text) };
+    const idle = createIdleState(getDrill('std-pistol-20')!, 'dryPar');
+    const prep = { ...idle, phase: 'prep' as const };
+    const running = { ...prep, phase: 'running' as const };
+    const series = { ...running, exposureOpen: true, currentExposureIndex: 0 };
+    announceTransition(speech, DEFAULT_SETTINGS, 'issf', idle, prep);
+    announceTransition(speech, DEFAULT_SETTINGS, 'issf', prep, running);
+    announceTransition(speech, DEFAULT_SETTINGS, 'issf', running, series);
+    announceTransition(speech, { ...DEFAULT_SETTINGS, voiceEnabled: false }, 'issf', idle, prep);
+    announceTransition(speech, DEFAULT_SETTINGS, 'ipsc', idle, prep);
+    expect(spoken).toEqual(['Preparation', 'Attention', 'Series 1']);
   });
 });

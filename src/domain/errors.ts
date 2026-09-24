@@ -10,6 +10,8 @@ export const AppErrorCode = {
   INVALID_SESSION: 'INVALID_SESSION',
   AUDIO_CONTEXT_FAILED: 'AUDIO_CONTEXT_FAILED',
   WAKE_LOCK_FAILED: 'WAKE_LOCK_FAILED',
+  START_DISPOSED: 'START_DISPOSED',
+  START_SKIPPED: 'START_SKIPPED',
 } as const;
 
 export type AppErrorCode = (typeof AppErrorCode)[keyof typeof AppErrorCode];

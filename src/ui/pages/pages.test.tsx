@@ -42,8 +42,8 @@ function renderApp(
 describe('pages', () => {
   it('renders home and the drill library', async () => {
     const { user } = renderApp('/');
-    expect(screen.getByTestId('home-free')).toBeInTheDocument();
-    await user.click(screen.getByText('Drill library'));
+    expect(screen.getByTestId('home-ipsc')).toBeInTheDocument();
+    await user.click(screen.getByTestId('home-ipsc'));
     expect(screen.getByTestId('drill-bill-drill-6-dryTap')).toBeInTheDocument();
     expect(screen.getByTestId('drill-bill-drill-6-live')).toHaveAttribute(
       'href',
@@ -59,10 +59,6 @@ describe('pages', () => {
     const { user } = renderApp('/settings');
     await user.selectOptions(screen.getByTestId('language'), 'pl');
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Ustawienia'));
-    await user.clear(screen.getByTestId('delay-min'));
-    await user.type(screen.getByTestId('delay-min'), '1');
-    await user.clear(screen.getByTestId('delay-max'));
-    await user.type(screen.getByTestId('delay-max'), '2');
   });
 
   it('renders install instructions in settings', async () => {
@@ -71,7 +67,7 @@ describe('pages', () => {
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Install');
     expect(screen.getByTestId('mic-sensitivity')).toBeInTheDocument();
     fireEvent.change(screen.getByTestId('mic-sensitivity'), { target: { value: '0.9' } });
-    await waitFor(() => expect(screen.getByTestId('mic-threshold')).toHaveStyle({ width: '90%' }));
+    await waitFor(() => expect(screen.getByTestId('mic-sensitivity')).toHaveValue('0.9'));
   });
 
   it('redirects invalid run params', async () => {
@@ -100,6 +96,12 @@ describe('pages', () => {
     await waitFor(() =>
       expect(screen.getByTestId('run-error')).toHaveTextContent('Cet exercice n’a pas de fenêtre PAR.'),
     );
+  });
+
+  it('starts a drill on the first click', async () => {
+    const { user } = renderApp('/run?drillId=bill-drill-6&input=dryTap');
+    await user.click(screen.getByTestId('start'));
+    expect(screen.getByTestId('stop')).toBeInTheDocument();
   });
 
   it('runs a dry-fire string, deletes a shot and saves history', async () => {
@@ -187,7 +189,7 @@ describe('pages', () => {
       'href',
       '/run?drillId=custom-par&input=dryPar',
     );
-    await user.click(screen.getByRole('link', { name: /repeat/i }));
+    await user.click(screen.getByTestId('back-to-drill'));
   });
 
   it('grants microphone permission on preflight', async () => {

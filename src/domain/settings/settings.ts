@@ -15,9 +15,9 @@ export type Settings = {
   vibrationEnabled: boolean;
   micPreset: MicPreset;
   micSensitivity: number;
-  prepEnabled: boolean;
   reducedMotion: boolean;
   micGranted: boolean;
+  voiceEnabled: boolean;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -29,9 +29,9 @@ export const DEFAULT_SETTINGS: Settings = {
   vibrationEnabled: true,
   micPreset: 'handgun',
   micSensitivity: 0.55,
-  prepEnabled: false,
   reducedMotion: false,
   micGranted: false,
+  voiceEnabled: true,
 };
 
 export function mergeSettings(partial: Partial<Settings>): Settings {

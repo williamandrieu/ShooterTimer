@@ -21,7 +21,6 @@ export type Session = {
   firstShotSec: TimeSec | null;
   totalSec: TimeSec | null;
   settingsSnapshot: { sensitivity: number; preset: MicPreset };
-  shooterName?: string;
 };
 
 export function firstShotTime(shots: ShotEvent[]): TimeSec | null {

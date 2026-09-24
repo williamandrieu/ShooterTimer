@@ -1,6 +1,6 @@
 import type { DrillId } from '../value-objects/ids.ts';
 
-export type TimerProfileId = 'ipscRandomStart' | 'issfParCountdown' | 'issfExposureSequence';
+export type TimerProfileId = 'ipscRandomStart' | 'issfParCountdown' | 'issfExposureSequence' | 'issfCombined';
 
 export type DrillCategory = 'ipsc' | 'issf';
 
@@ -24,6 +24,7 @@ export type Drill = {
   parSeconds?: number;
   exposures?: ExposureSpec;
   prepSeconds?: number;
+  thenExposures?: ExposureSpec;
   recommendedInput: RecommendedInput[];
   titleKey: string;
   briefKey: string;

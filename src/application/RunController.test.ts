@@ -13,6 +13,7 @@ import {
 } from '../test/fakes.ts';
 import {
   ipscRandomStartHandler,
+  issfCombinedHandler,
   issfExposureSequenceHandler,
   issfParCountdownHandler,
 } from '../domain/timer/profileHandlers/index.ts';
@@ -52,9 +53,11 @@ function makeController(
     handler:
       getDrill(drillId)!.timerProfile === 'issfExposureSequence'
         ? issfExposureSequenceHandler
-        : getDrill(drillId)!.timerProfile === 'issfParCountdown'
-          ? issfParCountdownHandler
-          : ipscRandomStartHandler,
+        : getDrill(drillId)!.timerProfile === 'issfCombined'
+          ? issfCombinedHandler
+          : getDrill(drillId)!.timerProfile === 'issfParCountdown'
+            ? issfParCountdownHandler
+            : ipscRandomStartHandler,
     targets: new SingleWindowTargetSequence(),
   });
   return { controller, clock, shots, effects };
@@ -109,7 +112,7 @@ describe('RunController', () => {
   });
 
   it('skips flash/vibrate when disabled and runs ISSF PAR', async () => {
-    const { controller, clock, effects } = makeController('rfp-4', 'dryPar', {
+    const { controller, clock, effects } = makeController('pistol-10-standard', 'dryPar', {
       flash: false,
       vibrate: false,
       motion: true,
@@ -118,7 +121,7 @@ describe('RunController', () => {
     clock.advance(50);
     expect(effects.flashes).toBe(0);
     expect(effects.vibrates).toBe(0);
-    clock.advance(10_200);
+    clock.advance(18_000);
     expect(controller.getState().phase).toBe('review');
   });
 
@@ -138,11 +141,19 @@ describe('RunController', () => {
     const second = controller.start();
     release();
     expect((await first).ok).toBe(true);
-    expect((await second).ok).toBe(true);
+    const overlapped = await second;
+    expect(overlapped.ok).toBe(false);
+    if (!overlapped.ok) {
+      expect(overlapped.error.code).toBe(AppErrorCode.START_SKIPPED);
+    }
     clock.advance(250);
     expect(controller.getState().phase).toBe('running');
     controller.dispose();
-    expect((await controller.start()).ok).toBe(true);
+    const afterDispose = await controller.start();
+    expect(afterDispose.ok).toBe(false);
+    if (!afterDispose.ok) {
+      expect(afterDispose.error.code).toBe(AppErrorCode.START_DISPOSED);
+    }
     expect(controller.getState().phase).toBe('running');
     const held = makeController('draw');
     held.controller.applySettings({ ...DEFAULT_SETTINGS, ipscDelayMinSec: 0, ipscDelayMaxSec: 0 });
@@ -153,7 +164,11 @@ describe('RunController', () => {
     const pending = held.controller.start();
     held.controller.dispose();
     releaseHeld();
-    expect((await pending).ok).toBe(true);
+    const abandoned = await pending;
+    expect(abandoned.ok).toBe(false);
+    if (!abandoned.ok) {
+      expect(abandoned.error.code).toBe(AppErrorCode.START_DISPOSED);
+    }
     expect(held.controller.getState().phase).toBe('idle');
   });
 
@@ -175,8 +190,9 @@ describe('RunController', () => {
     const { controller, clock } = makeController('sport-rapid-3x5', 'dryTap');
     await controller.start();
     clock.advance(3_100);
+    expect(controller.getState().phase).toBe('prep');
     expect(controller.getState().exposureOpen).toBe(false);
-    clock.advance(20_000);
+    clock.advance(24_000);
     expect(controller.getState().phase).toBe('review');
   });
 });
@@ -191,7 +207,7 @@ describe('session use cases', () => {
     shots.emit(clock.now());
     const empty = timerStateToSession(createIdleState(getDrill('draw')!, 'dryTap'), ids, 1, DEFAULT_SETTINGS);
     expect(empty.totalSec).toBe(0);
-    const session = timerStateToSession(controller.getState(), ids, 1, DEFAULT_SETTINGS, 'Ada');
+    const session = timerStateToSession(controller.getState(), ids, 1, DEFAULT_SETTINGS);
     expect((await saveSession(repo, session)).ok).toBe(true);
     expect((await listSessions(repo)).value?.length).toBe(1);
     expect((await getSession(repo, session.id)).value?.id).toBe(session.id);

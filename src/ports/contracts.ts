@@ -71,6 +71,10 @@ export interface SettingsRepository {
   save(settings: Settings): Promise<Result<void>>;
 }
 
+export interface SpeechPort {
+  speak(text: string, lang: string): void;
+}
+
 export interface MicPermissionPort {
   query(): Promise<MicPermissionState>;
 }

@@ -52,6 +52,7 @@ export function createTestDeps(overrides: Partial<AppDeps> = {}): AppDeps & {
       }) as BrowserRunEffects,
     requestMic: async () => requestMicrophone(async () => ({ getTracks: () => [] }) as unknown as MediaStream),
     queryMicPermission: async () => 'prompt',
+    speech: { speak: () => undefined },
     ...overrides,
   };
   return Object.assign(deps, { clock, logger, sessions, settingsStore, effects, shots });

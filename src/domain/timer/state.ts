@@ -25,6 +25,8 @@ export type TimerState = {
   shots: ShotEvent[];
   currentExposureIndex: number | null;
   exposureOpen: boolean;
+  thenExposures: { count: number; windowSec: number; pauseSec: number } | null;
+  combinedStage: 'precision' | 'rapid';
   light: Light;
   beepAt: TimeSec | null;
   hiddenMessage: boolean;
@@ -51,6 +53,8 @@ export function createIdleState(drill: Drill, inputMethod: InputMethod, parSecon
     shots: [],
     currentExposureIndex: null,
     exposureOpen: false,
+    thenExposures: drill.thenExposures ?? null,
+    combinedStage: 'precision',
     light: 'off',
     beepAt: null,
     hiddenMessage: false,

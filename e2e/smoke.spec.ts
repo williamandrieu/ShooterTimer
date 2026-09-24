@@ -1,11 +1,10 @@
 import { expect, test } from '@playwright/test';
 
 test('bill drill dry fire saves to history', async ({ page }) => {
-  await page.goto('/settings');
-  await page.getByTestId('delay-min').fill('0');
-  await page.getByTestId('delay-max').fill('0');
   await page.goto('/drills');
   await page.getByTestId('drill-bill-drill-6-dryTap').click();
+  await page.getByTestId('delay-random').uncheck();
+  await page.getByTestId('delay-fixed-minus').click();
   await expect(page.getByTestId('dry-mic-hint')).toBeVisible();
   await expect(page.getByTestId('shot-pad')).toHaveCount(0);
   await page.getByTestId('start').click();
@@ -19,10 +18,7 @@ test('bill drill dry fire saves to history', async ({ page }) => {
 
 test('free timer, PAR error in French, and language switch', async ({ page }) => {
   await page.goto('/');
-  await page.getByTestId('home-free').click();
   await page.goto('/settings');
-  await page.getByTestId('delay-min').fill('0');
-  await page.getByTestId('delay-max').fill('0');
   await page.getByTestId('language').selectOption('fr');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Réglages');
   await page.goto('/run?drillId=draw&input=dryPar');
