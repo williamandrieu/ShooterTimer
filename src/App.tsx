@@ -9,12 +9,12 @@ const deps = createAppDeps();
 
 export default function App() {
   return (
-    <ErrorBoundary logger={deps.logger} fallback={<CrashPage />}>
-      <AppProviders deps={deps}>
-        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+    <AppProviders deps={deps}>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+        <ErrorBoundary logger={deps.logger} fallback={<CrashPage />}>
           <AppRoutes />
-        </BrowserRouter>
-      </AppProviders>
-    </ErrorBoundary>
+        </ErrorBoundary>
+      </BrowserRouter>
+    </AppProviders>
   );
 }

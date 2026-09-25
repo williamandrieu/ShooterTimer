@@ -35,12 +35,25 @@
   --focus: var(--accent);
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  color-scheme: dark;
+  color-scheme: light dark;
   font-family: var(--font);
   font-size: var(--text);
   line-height: var(--leading);
   background: var(--bg);
   color: var(--fg);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f5f3ee;
+    --fg: #1a1d22;
+    --muted: #5c6570;
+    --card: #fff;
+    --border: #d0d6de;
+    --nav: #e8ecf0;
+    --input: #fff;
+    color-scheme: light;
+  }
 }
 
 * {

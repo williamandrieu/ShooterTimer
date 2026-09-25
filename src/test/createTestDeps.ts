@@ -42,6 +42,7 @@ export function createTestDeps(overrides: Partial<AppDeps> = {}): AppDeps & {
     createEffects: (onFlash) =>
       ({
         playBeep: () => effects.playBeep(),
+        playCue: (volume: number, cue: 'face' | 'edge') => effects.playCue(volume, cue),
         flash: () => {
           effects.flash();
           onFlash();

@@ -23,6 +23,7 @@ import { createIdleState } from '../domain/timer/state.ts';
 import { deleteSession, getSession, listSessions, saveSession, timerStateToSession } from './sessions.ts';
 import { requestMicrophone, queryMicrophonePermission } from './requestMic.ts';
 import { AppErrorCode } from '../domain/errors.ts';
+import { CUE_MUTE_MS } from '../domain/audio/startSignal.ts';
 
 function makeController(
   drillId: string,
@@ -112,7 +113,7 @@ describe('RunController', () => {
   });
 
   it('skips flash/vibrate when disabled and runs ISSF PAR', async () => {
-    const { controller, clock, effects } = makeController('pistol-10-standard', 'dryPar', {
+    const { controller, clock, effects } = makeController('std-pistol-10', 'dryPar', {
       flash: false,
       vibrate: false,
       motion: true,
@@ -184,6 +185,26 @@ describe('RunController', () => {
     shots.emit(clock.now());
     expect(controller.getState().shots).toHaveLength(1);
     controller.dispose();
+  });
+
+  it('beeps and lights each face and edge of a 3-7 string', async () => {
+    const { controller, clock, shots, effects } = makeController('fftir-3-7', 'dryTap');
+    await controller.start();
+    clock.advance(6_900);
+    expect(controller.getState().phase).toBe('prep');
+    expect(controller.getState().light).toBe('red');
+    expect(effects.beeps).toBe(0);
+    expect(effects.cues).toEqual([]);
+    clock.advance(200);
+    expect(controller.getState().exposureOpen).toBe(true);
+    expect(controller.getState().light).toBe('green');
+    expect(effects.cues).toEqual(['face']);
+    expect(effects.flashes).toBe(0);
+    clock.advance(3_000);
+    expect(controller.getState().light).toBe('red');
+    expect(controller.getState().exposureOpen).toBe(false);
+    expect(effects.cues).toEqual(['face', 'edge']);
+    expect(shots.mutes).toEqual([CUE_MUTE_MS, CUE_MUTE_MS]);
   });
 
   it('runs an ISSF exposure sequence to review', async () => {

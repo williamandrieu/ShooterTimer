@@ -4,6 +4,11 @@
   padding: calc(var(--safe-top) + var(--pad)) var(--pad) calc(var(--safe-bottom) + 108px);
 }
 
+.layoutFocus {
+  composes: layout;
+  padding-bottom: calc(var(--safe-bottom) + var(--pad));
+}
+
 .nav {
   position: fixed;
   left: 0;
@@ -36,7 +41,7 @@
   overflow-wrap: anywhere;
 }
 
-.nav a.active {
+.nav a.navActive {
   color: var(--accent-ink);
   background: var(--accent);
 }
@@ -180,6 +185,10 @@
   display: grid;
   place-items: center;
   font-weight: 700;
+}
+
+.lightTarget {
+  min-height: min(42dvh, 280px);
 }
 
 .red {
@@ -395,4 +404,112 @@
 .homeCategory span {
   text-align: center;
   line-height: 1.15;
+}
+
+.modeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-sm);
+}
+
+.modeChip {
+  width: auto;
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: var(--text-sm);
+}
+
+.runHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+}
+
+.runHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.badge {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--input);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.linkBack {
+  color: var(--fg);
+  font-weight: 700;
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.options {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  padding: 0 var(--pad) var(--pad);
+}
+
+.options summary {
+  min-height: var(--control-h);
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.optionsBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap-sm);
+}
+
+.stat {
+  composes: card;
+  gap: 4px;
+  padding: 12px;
+}
+
+.statLabel {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.statValue {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.shotRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+  padding: 8px 12px;
+  background: var(--card);
+  border-radius: var(--radius);
+}
+
+.btnCompact {
+  width: auto;
+  min-height: 44px;
+  padding: 8px 12px;
 }

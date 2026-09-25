@@ -6,6 +6,7 @@ import type {
   RandomPort,
   RunEffects,
   SessionRepository,
+  TargetCue,
   SettingsRepository,
   ShotInputPort,
 } from '../ports/contracts.ts';
@@ -149,6 +150,7 @@ export class MemorySettings implements SettingsRepository {
 
 export class RecordingEffects implements RunEffects {
   beeps = 0;
+  cues: TargetCue[] = [];
   flashes = 0;
   vibrates = 0;
   locks = 0;
@@ -157,6 +159,9 @@ export class RecordingEffects implements RunEffects {
 
   playBeep(): void {
     this.beeps += 1;
+  }
+  playCue(_volume: number, cue: TargetCue): void {
+    this.cues.push(cue);
   }
   flash(): void {
     this.flashes += 1;
@@ -197,8 +202,10 @@ export class ScriptedShotInput implements ShotInputPort {
     this.started = false;
   }
 
-  mute(_ms: number): void {
-    return undefined;
+  mutes: number[] = [];
+
+  mute(ms: number): void {
+    this.mutes.push(ms);
   }
 
   subscribe(listener: (at: TimeSec) => void): () => void {

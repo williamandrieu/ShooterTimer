@@ -39,15 +39,19 @@ export interface WakeLockPort {
   release(): Promise<void>;
 }
 
+export type TargetCue = 'face' | 'edge';
+
 export interface AudioOutputPort {
   resume(): Promise<void>;
   playBeep(volume: number): void;
+  playCue(volume: number, cue: TargetCue): void;
   currentTime(): number;
   dispose(): void;
 }
 
 export interface RunEffects {
   playBeep(volume: number): void;
+  playCue(volume: number, cue: TargetCue): void;
   flash(): void;
   vibrate(): void;
   acquireWakeLock(): Promise<void>;

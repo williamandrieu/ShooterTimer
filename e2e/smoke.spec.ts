@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 test('bill drill dry fire saves to history', async ({ page }) => {
   await page.goto('/drills');
   await page.getByTestId('drill-bill-drill-6-dryTap').click();
+  await page.getByTestId('run-options').locator('summary').click();
   await page.getByTestId('delay-random').uncheck();
   await page.getByTestId('delay-fixed-minus').click();
   await expect(page.getByTestId('dry-mic-hint')).toBeVisible();
@@ -11,7 +12,8 @@ test('bill drill dry fire saves to history', async ({ page }) => {
   await page.getByTestId('stop').click();
   await page.getByTestId('save-session').click();
   await expect(page.getByTestId('history-item')).toBeVisible();
-  await page.getByTestId('back-to-drill').click();
+  await page.getByRole('link', { name: 'Home' }).click();
+  await page.getByTestId('home-last').click();
   await expect(page.getByTestId('start')).toBeVisible();
   await expect(page.getByTestId('dry-mic-hint')).toBeVisible();
 });

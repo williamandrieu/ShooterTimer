@@ -2,9 +2,10 @@ import { useNavigate } from 'react-router-dom';
 import { useDeps, useI18n, useRunMemory, useSettings } from '../../app/AppProviders.tsx';
 import { timerStateToSession } from '../../hooks/saveRun.ts';
 import { computeReviewStats } from '../../domain/review/stats.ts';
-import { formatTime } from '../../i18n/index.ts';
+import { formatTime, type TranslationKey } from '../../i18n/index.ts';
 import { shotIndex } from '../../domain/value-objects/ids.ts';
 import { continueRunHref } from '../../domain/settings/settings.ts';
+import { getDrill } from '../../domain/drills/catalog.ts';
 import { Button } from '../components/Button.tsx';
 import { Page } from '../components/Page.tsx';
 import styles from '../styles/ui.module.css';
@@ -19,29 +20,43 @@ export function ReviewPage() {
   if (!lastRun) {
     return (
       <Page>
-        <p className={styles.muted}>{t('history.empty')}</p>
+        <p className={styles.muted}>{t('review.empty')}</p>
+        <Button to="/">{t('error.home')}</Button>
       </Page>
     );
   }
 
   const stats = computeReviewStats(lastRun);
+  const drill = getDrill(lastRun.drillId);
 
   return (
-    <Page title={t('review.title')}>
-      <p>
-        {t('review.first')}: {stats.firstShot === null ? '—' : formatTime(stats.firstShot, locale)}
-      </p>
-      <p>
-        {t('review.total')}: {stats.total === null ? '—' : formatTime(stats.total, locale)}
-      </p>
-      <p>
-        {t('review.avgSplit')}: {stats.splitAverage === null ? '—' : formatTime(stats.splitAverage, locale)}
-      </p>
+    <Page title={drill ? t(drill.titleKey as TranslationKey) : t('review.title')}>
+      <div className={styles.stats}>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>{t('review.first')}</span>
+          <span className={styles.statValue}>{stats.firstShot === null ? '—' : formatTime(stats.firstShot, locale)}</span>
+        </div>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>{t('review.total')}</span>
+          <span className={styles.statValue}>{stats.total === null ? '—' : formatTime(stats.total, locale)}</span>
+        </div>
+        <div className={styles.stat}>
+          <span className={styles.statLabel}>{t('review.avgSplit')}</span>
+          <span className={styles.statValue}>
+            {stats.splitAverage === null ? '—' : formatTime(stats.splitAverage, locale)}
+          </span>
+        </div>
+      </div>
       <p className={styles.muted}>{t('review.deleteShot')}</p>
       <ul className={styles.list}>
         {lastRun.shots.map((shot) => (
-          <li key={shot.index}>
+          <li key={shot.index} className={styles.shotRow}>
+            <span>
+              {shot.index}: {formatTime(shot.time, locale)}
+              {stats.showWindowFlags && !shot.inWindow ? ` ${t('review.outOfWindow')}` : ''}
+            </span>
             <Button
+              className={styles.btnCompact}
               variant="secondary"
               data-testid={`shot-${shot.index}`}
               onClick={() => {
@@ -55,8 +70,7 @@ export function ReviewPage() {
                 });
               }}
             >
-              {shot.index}: {formatTime(shot.time, locale)}
-              {stats.showWindowFlags && !shot.inWindow ? ` ${t('review.outOfWindow')}` : ''}
+              {t('history.delete')}
             </Button>
           </li>
         ))}

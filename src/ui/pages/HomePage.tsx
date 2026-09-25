@@ -1,4 +1,7 @@
-import { useI18n } from '../../app/AppProviders.tsx';
+import { useI18n, useRunMemory } from '../../app/AppProviders.tsx';
+import { getDrill } from '../../domain/drills/catalog.ts';
+import { continueRunHref } from '../../domain/settings/settings.ts';
+import type { TranslationKey } from '../../i18n/index.ts';
 import { Button } from '../components/Button.tsx';
 import { Page } from '../components/Page.tsx';
 import styles from '../styles/ui.module.css';
@@ -37,10 +40,27 @@ function IconIssf() {
 
 export function HomePage() {
   const { t } = useI18n();
+  const { lastRun } = useRunMemory();
+  const lastDrill = lastRun ? getDrill(lastRun.drillId) : undefined;
   return (
     <Page title={t('app.name')}>
       <div className={styles.homeBody}>
         <p className={styles.muted}>{t('home.tagline')}</p>
+        <div className={styles.modeRow}>
+          <Button className={styles.modeChip} to="/run?drillId=free-timer&input=dryTap" data-testid="home-free">
+            {t('home.free')}
+          </Button>
+          {lastRun ? (
+            <Button
+              className={styles.modeChip}
+              variant="secondary"
+              to={continueRunHref(lastRun.drillId, lastRun.inputMethod)}
+              data-testid="home-last"
+            >
+              {lastDrill ? t(lastDrill.titleKey as TranslationKey) : t('home.last')}
+            </Button>
+          ) : null}
+        </div>
         <div className={styles.homeCategories}>
           <Button className={styles.homeCategory} to="/drills?category=ipsc" data-testid="home-ipsc">
             <IconIpsc />

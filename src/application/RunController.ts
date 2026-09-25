@@ -1,4 +1,4 @@
-import { START_SIGNAL_MUTE_MS } from '../domain/audio/startSignal.ts';
+import { CUE_MUTE_MS, START_SIGNAL_MUTE_MS } from '../domain/audio/startSignal.ts';
 import { AppErrorCode, appError } from '../domain/errors.ts';
 import { err, ok, type Result } from '../domain/result.ts';
 import { canStartRun } from '../domain/timer/specs.ts';
@@ -150,7 +150,7 @@ export class RunController {
       this.clearScheduled();
     }
     this.state = reduceTimerState(this.state, event);
-    if (event.type === 'START_BEEP') {
+    if (event.type === 'START_BEEP' && !this.state.exposures) {
       this.options.shotInput.mute(START_SIGNAL_MUTE_MS);
       this.options.effects.playBeep(this.settings.beepVolume);
       if (this.settings.flashEnabled && !this.settings.reducedMotion) {
@@ -159,6 +159,10 @@ export class RunController {
       if (this.settings.vibrationEnabled) {
         this.options.effects.vibrate();
       }
+    }
+    if (event.type === 'EXPOSURE_OPEN' || event.type === 'EXPOSURE_CLOSE') {
+      this.options.shotInput.mute(CUE_MUTE_MS);
+      this.options.effects.playCue(this.settings.beepVolume, event.type === 'EXPOSURE_OPEN' ? 'face' : 'edge');
     }
     if (this.state.phase === 'review') {
       this.clearTimers();

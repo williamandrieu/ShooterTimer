@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { useDeps, useI18n } from '../../app/AppProviders.tsx';
+import { useDeps, useI18n, useRunChrome } from '../../app/AppProviders.tsx';
 import styles from '../styles/ui.module.css';
 
 function IconHome() {
@@ -36,6 +36,7 @@ function IconSettings() {
 export function Layout() {
   const { t } = useI18n();
   const deps = useDeps();
+  const { hideNav } = useRunChrome();
 
   useEffect(() => {
     const unlock = () => {
@@ -52,22 +53,24 @@ export function Layout() {
   }, [deps]);
 
   return (
-    <div className={styles.layout}>
+    <div className={hideNav ? styles.layoutFocus : styles.layout}>
       <Outlet />
-      <nav className={styles.nav}>
-        <NavLink to="/" end>
-          <IconHome />
-          <span>{t('nav.home')}</span>
-        </NavLink>
-        <NavLink to="/history">
-          <IconHistory />
-          <span>{t('nav.history')}</span>
-        </NavLink>
-        <NavLink to="/settings">
-          <IconSettings />
-          <span>{t('nav.settings')}</span>
-        </NavLink>
-      </nav>
+      {hideNav ? null : (
+        <nav className={styles.nav}>
+          <NavLink to="/" end className={({ isActive }) => (isActive ? styles.navActive : undefined)}>
+            <IconHome />
+            <span>{t('nav.home')}</span>
+          </NavLink>
+          <NavLink to="/history" className={({ isActive }) => (isActive ? styles.navActive : undefined)}>
+            <IconHistory />
+            <span>{t('nav.history')}</span>
+          </NavLink>
+          <NavLink to="/settings" className={({ isActive }) => (isActive ? styles.navActive : undefined)}>
+            <IconSettings />
+            <span>{t('nav.settings')}</span>
+          </NavLink>
+        </nav>
+      )}
     </div>
   );
 }

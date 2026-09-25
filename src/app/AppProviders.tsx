@@ -55,6 +55,19 @@ export function useRunMemory() {
   return ctx;
 }
 
+export const RunChromeContext = createContext<{
+  hideNav: boolean;
+  setHideNav: (hide: boolean) => void;
+} | undefined>(undefined);
+
+export function useRunChrome() {
+  const ctx = useContext(RunChromeContext);
+  if (!ctx) {
+    throw new Error('Run chrome missing');
+  }
+  return ctx;
+}
+
 export function AppProviders({
   deps,
   children,
@@ -66,6 +79,7 @@ export function AppProviders({
 }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [lastRun, setLastRun] = useState<TimerState | null>(initialLastRun);
+  const [hideNav, setHideNav] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -110,7 +124,9 @@ export function AppProviders({
             t: (key, vars) => t(messages, key, vars),
           }}
         >
-          <RunMemoryContext.Provider value={{ lastRun, setLastRun }}>{children}</RunMemoryContext.Provider>
+          <RunMemoryContext.Provider value={{ lastRun, setLastRun }}>
+            <RunChromeContext.Provider value={{ hideNav, setHideNav }}>{children}</RunChromeContext.Provider>
+          </RunMemoryContext.Provider>
         </I18nContext.Provider>
       </SettingsContext.Provider>
     </DepsContext.Provider>

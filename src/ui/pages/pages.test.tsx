@@ -49,7 +49,7 @@ describe('pages', () => {
       'href',
       '/preflight?drillId=bill-drill-6&input=live',
     );
-    expect(screen.getByTestId('drill-custom-par-dryPar')).toBeInTheDocument();
+    expect(screen.queryByTestId('drill-custom-par-dryPar')).not.toBeInTheDocument();
     expect(screen.queryByTestId('drill-draw-dryPar')).not.toBeInTheDocument();
     expect(screen.queryByTestId('drill-bill-drill-6-dryPar')).not.toBeInTheDocument();
     expect(screen.queryByTestId('drill-el-presidente-dryPar')).not.toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('pages', () => {
   it('renders install instructions in settings', async () => {
     renderApp('/install');
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Settings'));
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Install');
+    expect(screen.getByRole('heading', { name: /install/i })).toBeInTheDocument();
     expect(screen.getByTestId('mic-sensitivity')).toBeInTheDocument();
     fireEvent.change(screen.getByTestId('mic-sensitivity'), { target: { value: '0.9' } });
     await waitFor(() => expect(screen.getByTestId('mic-sensitivity')).toHaveValue('0.9'));
@@ -98,6 +98,16 @@ describe('pages', () => {
     );
   });
 
+  it('hides the 3-7 clock when the option is checked', async () => {
+    const { user } = renderApp('/run?drillId=fftir-3-7&input=dryTap');
+    expect(screen.getByTestId('clock')).toBeInTheDocument();
+    expect(screen.queryByTestId('hide-timer')).not.toBeNull();
+    await user.click(screen.getByTestId('hide-timer'));
+    await user.click(screen.getByTestId('start'));
+    expect(screen.queryByTestId('clock')).not.toBeInTheDocument();
+    expect(screen.getByTestId('light')).toBeInTheDocument();
+  });
+
   it('starts a drill on the first click', async () => {
     const { user } = renderApp('/run?drillId=bill-drill-6&input=dryTap');
     await user.click(screen.getByTestId('start'));
@@ -128,20 +138,20 @@ describe('pages', () => {
     await user.click(screen.getByTestId('shot-1'));
     await user.click(screen.getByTestId('save-session'));
     await screen.findByTestId('history-item');
-    expect(screen.getByTestId('back-to-drill')).toHaveAttribute(
-      'href',
-      '/run?drillId=bill-drill-6&input=dryTap',
-    );
+    await user.click(screen.getByRole('link', { name: /^home$/i }));
+    expect(screen.getByTestId('home-last')).toHaveAttribute('href', '/run?drillId=bill-drill-6&input=dryTap');
+    await user.click(screen.getByRole('link', { name: /^history$/i }));
     await user.click(screen.getByRole('button', { name: /delete/i }));
     await waitFor(() => expect(screen.queryByTestId('history-item')).not.toBeInTheDocument());
-    await user.click(screen.getByTestId('back-to-drill'));
+    await user.click(screen.getByRole('link', { name: /^home$/i }));
+    await user.click(screen.getByTestId('home-last'));
     await screen.findByTestId('start');
     expect(screen.getByTestId('dry-mic-hint')).toBeInTheDocument();
   });
 
   it('shows empty review and a history row for an unknown drill', async () => {
     renderApp('/review');
-    await waitFor(() => expect(screen.getByText(/No saved strings/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/No string to review/)).toBeInTheDocument());
     const deps = createTestDeps();
     const session: Session = {
       id: 's-1',
@@ -247,7 +257,13 @@ describe('pages', () => {
   });
 
   it('renders crash copy', () => {
-    render(<CrashPage />);
+    render(
+      <AppProviders deps={createTestDeps()}>
+        <MemoryRouter>
+          <CrashPage />
+        </MemoryRouter>
+      </AppProviders>,
+    );
     expect(screen.getByRole('heading')).toHaveTextContent('crashed');
   });
 });

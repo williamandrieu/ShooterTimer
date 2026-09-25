@@ -3,7 +3,7 @@ import { AppErrorCode, appError } from '../../domain/errors.ts';
 import { err, ok, type Result } from '../../domain/result.ts';
 import type { TimeSec } from '../../domain/value-objects/ids.ts';
 import type { RunEffects, ShotInputPort, WakeLockPort } from '../../ports/contracts.ts';
-import { playBeep, type BeepContext } from './beep.ts';
+import { playBeep, playCue, type BeepContext, type TargetCue } from './beep.ts';
 import { requestMicStream } from './micConstraints.ts';
 import { startShotDetection, type DetectorHandles } from './shotDetectorAdapter.ts';
 import { acquireWakeLock, releaseWakeLock, startSilentKeepAlive, type WakeLockSentinelLike } from './wakeLock.ts';
@@ -90,6 +90,13 @@ export class BrowserAudioService {
     playBeep(this.context as unknown as BeepContext, volume);
   }
 
+  playCue(volume: number, cue: TargetCue): void {
+    if (!this.context) {
+      return;
+    }
+    playCue(this.context as unknown as BeepContext, volume, cue);
+  }
+
   currentTime(): number {
     return this.context?.currentTime ?? 0;
   }
@@ -128,6 +135,10 @@ export class BrowserRunEffects implements RunEffects {
 
   playBeep(volume: number): void {
     this.audio.playBeep(volume);
+  }
+
+  playCue(volume: number, cue: TargetCue): void {
+    this.audio.playCue(volume, cue);
   }
 
   flash(): void {

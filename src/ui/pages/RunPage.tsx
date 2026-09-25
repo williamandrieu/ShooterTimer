@@ -1,6 +1,7 @@
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { useState } from 'react';
-import { useDeps, useI18n, useRunMemory, useSettings } from '../../app/AppProviders.tsx';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useDeps, useI18n, useRunChrome, useRunMemory, useSettings } from '../../app/AppProviders.tsx';
+import { getDrill } from '../../domain/drills/catalog.ts';
 import { parseRunSearchParams } from '../../validation/schemas.ts';
 import { useTimerRun } from '../../hooks/useTimerRun.ts';
 import { formatTime } from '../../i18n/index.ts';
@@ -128,8 +129,11 @@ function LoadedRun({ config }: { config: RunConfig }) {
   const deps = useDeps();
   const { settings, save } = useSettings();
   const { setLastRun } = useRunMemory();
+  const { setHideNav } = useRunChrome();
   const navigate = useNavigate();
   const [flash, setFlash] = useState(false);
+  const [hideTimer, setHideTimer] = useState(false);
+  const drill = getDrill(config.drillId);
 
   const run = useTimerRun(
     config,
@@ -147,6 +151,12 @@ function LoadedRun({ config }: { config: RunConfig }) {
     },
   );
 
+  useEffect(() => {
+    const active = run.state.phase === 'prep' || run.state.phase === 'running';
+    setHideNav(active);
+    return () => setHideNav(false);
+  }, [run.state.phase, setHideNav]);
+
   if (run.missingDrill) {
     return <Navigate to="/invalid" replace />;
   }
@@ -154,9 +164,24 @@ function LoadedRun({ config }: { config: RunConfig }) {
   const lightClass = styles[run.state.light] ?? styles.off;
   const dryFire = config.inputMethod !== 'live';
 
+  const idle = run.state.phase === 'idle' || run.state.phase === 'review';
+  const concealTime = config.drillId === 'fftir-3-7' && hideTimer && !idle;
+  const modeKey = `input.${config.inputMethod}` as TranslationKey;
+
   return (
     <Page>
       <div className={flash ? 'flash on' : 'flash'} />
+      {drill ? (
+        <header className={styles.runHeader}>
+          <div className={styles.runHeaderText}>
+            <h1 className={styles.title}>{t(drill.titleKey as TranslationKey)}</h1>
+            <span className={styles.badge}>{t(modeKey)}</span>
+          </div>
+          <Link className={styles.linkBack} to={`/drills?category=${drill.category}`}>
+            {t('run.back')}
+          </Link>
+        </header>
+      ) : null}
       {run.state.hiddenMessage ? <p>{t('run.hidden')}</p> : null}
       {run.state.phase === 'prep' ? <p>{t('run.prep')}</p> : null}
       {dryFire ? (
@@ -164,47 +189,36 @@ function LoadedRun({ config }: { config: RunConfig }) {
           {t('run.dryMic')}
         </p>
       ) : null}
-      <div className={`${styles.light} ${lightClass}`} data-testid="light" />
-      <div className={styles.time} data-testid="clock">
-        {formatTime(run.state.elapsedSec, locale)}
-      </div>
-      <div className={styles.row}>
-        <span>
-          {t('run.shots')} {run.state.shots.length}
-        </span>
-        <span>
-          {t('run.split')} {formatTime(run.state.shots[run.state.shots.length - 1]?.split ?? 0, locale)}
-        </span>
-      </div>
-      <ul className={styles.list} aria-live="polite">
-        {run.state.shots.map((shot) => (
-          <li key={shot.index}>
-            {shot.index}: {formatTime(shot.time, locale)}
-            {shot.split !== null ? ` (+${formatTime(shot.split, locale)})` : ''}
-          </li>
-        ))}
-      </ul>
-      {run.error ? <p data-testid="run-error">{t(run.error)}</p> : null}
-      {run.state.phase === 'idle' || run.state.phase === 'review' ? (
+      <div
+        className={`${styles.light} ${lightClass} ${run.state.profile === 'issfExposureSequence' ? styles.lightTarget : ''}`}
+        data-testid="light"
+      />
+      {concealTime ? null : (
         <>
-          <DelayControl />
-          <section className={styles.runPanel}>
-            <Field label={t('settings.preset')}>
-              <select
-                className={styles.input}
-                data-testid="run-mic-preset"
-                value={settings.micPreset}
-                onChange={(event) => void save({ ...settings, micPreset: event.target.value as MicPreset })}
-              >
-                {MIC_PRESETS.map((preset) => (
-                  <option key={preset} value={preset}>
-                    {t(`preset.${preset}` as TranslationKey)}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <MicSensitivityField inputTestId="run-sensitivity" labelKey="run.sensitivity" large ends />
-          </section>
+          <div className={styles.time} data-testid="clock">
+            {formatTime(run.state.elapsedSec, locale)}
+          </div>
+          <div className={styles.row}>
+            <span>
+              {t('run.shots')} {run.state.shots.length}
+            </span>
+            <span>
+              {t('run.split')} {formatTime(run.state.shots[run.state.shots.length - 1]?.split ?? 0, locale)}
+            </span>
+          </div>
+          <ul className={styles.list} aria-live="polite">
+            {run.state.shots.map((shot) => (
+              <li key={shot.index}>
+                {shot.index}: {formatTime(shot.time, locale)}
+                {shot.split !== null ? ` (+${formatTime(shot.split, locale)})` : ''}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {run.error ? <p data-testid="run-error">{t(run.error)}</p> : null}
+      {idle ? (
+        <>
           <Button
             data-testid="start"
             disabled={!run.ready || run.starting}
@@ -222,6 +236,40 @@ function LoadedRun({ config }: { config: RunConfig }) {
           >
             {t('run.start')}
           </Button>
+          <details className={styles.options} data-testid="run-options">
+            <summary>{t('run.options')}</summary>
+            <div className={styles.optionsBody}>
+              {config.drillId === 'fftir-3-7' ? (
+                <label className={styles.check}>
+                  <input
+                    type="checkbox"
+                    data-testid="hide-timer"
+                    checked={hideTimer}
+                    onChange={(event) => setHideTimer(event.target.checked)}
+                  />
+                  {t('run.hideTimer')}
+                </label>
+              ) : null}
+              <DelayControl />
+              <section className={styles.runPanel}>
+                <Field label={t('settings.preset')}>
+                  <select
+                    className={styles.input}
+                    data-testid="run-mic-preset"
+                    value={settings.micPreset}
+                    onChange={(event) => void save({ ...settings, micPreset: event.target.value as MicPreset })}
+                  >
+                    {MIC_PRESETS.map((preset) => (
+                      <option key={preset} value={preset}>
+                        {t(`preset.${preset}` as TranslationKey)}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <MicSensitivityField inputTestId="run-sensitivity" labelKey="run.sensitivity" large ends />
+              </section>
+            </div>
+          </details>
         </>
       ) : (
         <Button variant="danger" data-testid="stop" onClick={() => run.stop()}>

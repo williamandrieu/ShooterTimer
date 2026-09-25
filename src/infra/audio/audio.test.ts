@@ -7,10 +7,14 @@ import {
 } from './micConstraints.ts';
 import {
   playBeep,
+  playCue,
+  EDGE_CUE_HZ,
+  FACE_CUE_HZ,
   SHOT_TIMER_BEEP_BODY_HZ,
   SHOT_TIMER_BEEP_HZ,
   SHOT_TIMER_BEEP_SEC,
 } from './beep.ts';
+import { CUE_BEEP_SEC } from '../../domain/audio/startSignal.ts';
 import { acquireWakeLock, releaseWakeLock, startSilentKeepAlive } from './wakeLock.ts';
 import { startShotDetection } from './shotDetectorAdapter.ts';
 import { handleWorkletQuantum, processWorkletInputs, createWorkletState } from './workletLogic.ts';
@@ -75,6 +79,12 @@ describe('beep', () => {
     playBeep(ctx, -1, 1);
     expect(oscillators[2]?.start).toHaveBeenCalledWith(1);
     expect(oscillators[2]?.stop).toHaveBeenCalledWith(1 + SHOT_TIMER_BEEP_SEC);
+    playCue(ctx, 0.5, 'face', 2);
+    playCue(ctx, 0.5, 'edge', 3);
+    expect(oscillators[4]?.frequency.value).toBe(FACE_CUE_HZ);
+    expect(oscillators[4]?.stop).toHaveBeenCalledWith(2 + CUE_BEEP_SEC);
+    expect(oscillators[5]?.frequency.value).toBe(EDGE_CUE_HZ);
+    expect(oscillators[5]?.stop).toHaveBeenCalledWith(3 + CUE_BEEP_SEC);
   });
 });
 
