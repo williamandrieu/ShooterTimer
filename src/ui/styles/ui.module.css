@@ -445,15 +445,6 @@
   font-weight: 700;
 }
 
-.linkBack {
-  color: var(--fg);
-  font-weight: 700;
-  text-decoration: none;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-
 .options {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -512,4 +503,11 @@
   width: auto;
   min-height: 44px;
   padding: 8px 12px;
+  gap: 6px;
+}
+
+.btnIcon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }

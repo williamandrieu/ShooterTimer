@@ -1,4 +1,4 @@
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useDeps, useI18n, useRunChrome, useRunMemory, useSettings } from '../../app/AppProviders.tsx';
 import { getDrill } from '../../domain/drills/catalog.ts';
@@ -177,9 +177,17 @@ function LoadedRun({ config }: { config: RunConfig }) {
             <h1 className={styles.title}>{t(drill.titleKey as TranslationKey)}</h1>
             <span className={styles.badge}>{t(modeKey)}</span>
           </div>
-          <Link className={styles.linkBack} to={`/drills?category=${drill.category}`}>
-            {t('run.back')}
-          </Link>
+          <Button
+            className={styles.btnCompact}
+            variant="secondary"
+            to={`/drills?category=${drill.category}`}
+            data-testid="back-to-drills"
+          >
+            <svg className={styles.btnIcon} viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M15.4 4.6 8 12l7.4 7.4-1.4 1.4L5.2 12 14 3.2z" />
+            </svg>
+            {t('nav.drills')}
+          </Button>
         </header>
       ) : null}
       {run.state.hiddenMessage ? <p>{t('run.hidden')}</p> : null}
